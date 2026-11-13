@@ -1,0 +1,2497 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src blob: data:; media-src blob:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Canvas Export Explorer</title>
+    <style>
+      :root {
+        --bg: #f6f7f4;
+        --panel: #fff;
+        --ink: #203832;
+        --muted: #60736b;
+        --line: #dce4de;
+        --accent: #246951;
+        --soft: #eaf2ec;
+        --warn: #8b4d16;
+        --shadow: 0 16px 50px #18382b09;
+        font:
+          15px/1.55 system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color-scheme: light;
+      }
+      :root[data-theme="dark"] {
+        --bg: #14221e;
+        --panel: #1c2d26;
+        --ink: #e3eee6;
+        --muted: #afc3b5;
+        --line: #384e40;
+        --accent: #9ad5b1;
+        --soft: #294537;
+        --warn: #f3c98b;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      button,
+      .button {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--ink);
+        padding: 9px 13px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+      }
+      button:hover,
+      .button:hover {
+        border-color: var(--accent);
+        background: var(--soft);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: wait;
+      }
+      .primary {
+        background: var(--accent);
+        color: var(--panel);
+        border-color: var(--accent);
+        font-weight: 650;
+      }
+      .primary:hover {
+        background: var(--ink);
+        color: var(--panel);
+      }
+      :focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 3px;
+      }
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+      h1 {
+        font-size: clamp(30px, 4vw, 48px);
+        line-height: 1.15;
+        letter-spacing: -1.5px;
+      }
+      h2 {
+        font-size: 24px;
+        line-height: 1.3;
+        letter-spacing: -0.5px;
+      }
+      h3 {
+        font-size: 17px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .eyebrow {
+        font-size: 11px;
+        letter-spacing: 1.7px;
+        font-weight: 750;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      header {
+        height: 78px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        background: var(--panel);
+        gap: 16px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 750;
+        letter-spacing: -0.3px;
+      }
+      .brand-mark {
+        background: var(--accent);
+        color: var(--panel);
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 11px;
+        font-size: 22px;
+      }
+      .header-actions {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+      }
+      .pill {
+        border: 1px solid var(--line);
+        border-radius: 30px;
+        padding: 4px 10px;
+        font-size: 12px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .welcome {
+        max-width: 1060px;
+        margin: auto;
+        padding: 66px 28px 30px;
+      }
+      .intro {
+        max-width: 720px;
+      }
+      .intro p {
+        max-width: 620px;
+        font-size: 17px;
+        color: var(--muted);
+      }
+      .dropzone {
+        margin: 34px 0;
+        border: 2px dashed #9cb6a6;
+        border-radius: 18px;
+        min-height: 250px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: var(--panel);
+        padding: 35px;
+        text-align: center;
+        box-shadow: var(--shadow);
+      }
+      .dropzone.drag {
+        background: var(--soft);
+        border-color: var(--accent);
+      }
+      .drop-symbol {
+        font-size: 29px;
+        color: var(--accent);
+        margin-bottom: 10px;
+      }
+      .dropzone h2 {
+        margin-bottom: 8px;
+      }
+      .dropzone p {
+        margin-bottom: 20px;
+      }
+      .features {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+        margin: 40px 0;
+      }
+      .features h3 {
+        margin-bottom: 8px;
+      }
+      .features p {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .number {
+        color: var(--accent);
+        font:
+          12px ui-monospace,
+          monospace;
+        display: block;
+        margin-bottom: 8px;
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        padding-top: 20px;
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+      }
+      .workspace {
+        display: grid;
+        grid-template-columns: 210px minmax(0, 1fr);
+        min-height: calc(100vh - 78px);
+      }
+      aside {
+        padding: 24px 14px;
+        border-right: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .course-name {
+        font-size: 14px;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+        padding: 0 10px;
+        margin: 8px 0 5px;
+      }
+      .archive-info {
+        font-size: 12px;
+        padding: 0 10px;
+        margin-bottom: 25px;
+        color: var(--muted);
+      }
+      nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      nav button {
+        border-color: transparent;
+        background: transparent;
+        justify-content: space-between;
+        text-align: left;
+        font-size: 13px;
+        padding: 10px;
+      }
+      nav button[aria-current="true"] {
+        background: var(--soft);
+        color: var(--accent);
+        font-weight: 700;
+      }
+      nav span:last-child {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .side-foot {
+        font-size: 12px;
+        color: var(--muted);
+        padding: 24px 10px;
+      }
+      .main {
+        min-width: 0;
+        padding: 26px;
+      }
+      .summary {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 22px;
+      }
+      .summary h1 {
+        font-size: 27px;
+        letter-spacing: -0.7px;
+        margin: 4px 0;
+      }
+      .summary p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .summary-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .search {
+        position: relative;
+        flex: 1;
+      }
+      .search input {
+        width: 100%;
+        padding: 11px 14px;
+        background: var(--panel);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+      }
+      .toolbar select {
+        background: var(--panel);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 8px;
+        max-width: 155px;
+      }
+      .split {
+        display: grid;
+        grid-template-columns: minmax(245px, 32%) minmax(0, 1fr);
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: var(--panel);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        height: calc(100vh - 270px);
+        min-height: 450px;
+      }
+      .catalog {
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .list-head {
+        padding: 12px 15px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .list-head label {
+        display: flex;
+        gap: 7px;
+        align-items: center;
+      }
+      .list {
+        overflow: auto;
+        flex: 1;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        padding: 7px 11px;
+        border-bottom: 1px solid var(--line);
+      }
+      .row.selected {
+        background: var(--soft);
+        box-shadow: inset 3px 0 var(--accent);
+      }
+      .row input {
+        margin-top: 15px;
+        accent-color: var(--accent);
+      }
+      .row button {
+        border: 0;
+        background: transparent;
+        text-align: left;
+        display: block;
+        flex: 1;
+        min-width: 0;
+        padding: 7px 4px;
+        line-height: 1.4;
+        border-radius: 4px;
+      }
+      .row-title {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+      .row-meta {
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 5px;
+        overflow-wrap: anywhere;
+      }
+      .detail {
+        overflow: auto;
+        min-width: 0;
+        padding: 26px;
+      }
+      .detail h2 {
+        overflow-wrap: anywhere;
+        margin: 7px 0 12px;
+      }
+      .detail-top {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-bottom: 21px;
+      }
+      .detail-top button {
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+      .tabs {
+        display: flex;
+        gap: 18px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 20px;
+      }
+      .tabs button {
+        border: 0;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
+        padding: 9px 0;
+        background: transparent;
+        font-size: 13px;
+      }
+      .tabs button[aria-selected="true"] {
+        border-bottom-color: var(--accent);
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .path {
+        font:
+          11px/1.6 ui-monospace,
+          monospace;
+        color: var(--muted);
+        overflow-wrap: anywhere;
+      }
+      .notice {
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--accent);
+        border-radius: 6px;
+        padding: 12px 15px;
+        margin: 14px 0;
+        color: var(--muted);
+        font-size: 13px;
+        background: var(--bg);
+      }
+      .empty {
+        padding: 36px 20px;
+        text-align: center;
+        color: var(--muted);
+      }
+      pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font:
+          12px/1.6 ui-monospace,
+          monospace;
+        background: var(--bg);
+        padding: 16px;
+        border-radius: 8px;
+        tab-size: 2;
+      }
+      .prose {
+        font-size: 15px;
+        overflow-wrap: anywhere;
+      }
+      .prose h1 {
+        font-size: 29px;
+        letter-spacing: -0.6px;
+      }
+      .prose h2 {
+        font-size: 23px;
+        margin-top: 25px;
+      }
+      .prose h3 {
+        margin-top: 20px;
+      }
+      .prose img,
+      .prose video,
+      .media-preview {
+        max-width: 100%;
+        height: auto;
+        border-radius: 6px;
+      }
+      .prose table {
+        display: block;
+        overflow: auto;
+        border-collapse: collapse;
+        max-width: 100%;
+      }
+      .prose th,
+      .prose td {
+        border: 1px solid var(--line);
+        padding: 8px;
+      }
+      .prose blockquote {
+        border-left: 3px solid var(--line);
+        margin-left: 0;
+        padding-left: 16px;
+      }
+      .prose a {
+        word-break: break-word;
+      }
+      .prose li {
+        margin: 5px 0;
+      }
+      .prose audio {
+        max-width: 100%;
+      }
+      .metadata {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .metadata th,
+      .metadata td {
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid var(--line);
+        padding: 9px 6px;
+        overflow-wrap: anywhere;
+      }
+      .metadata th {
+        font-weight: 500;
+        color: var(--muted);
+        width: 35%;
+      }
+      .file-link {
+        display: block;
+        max-width: 100%;
+        text-align: left;
+        justify-content: flex-start;
+        margin: 7px 0;
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
+      .module-link {
+        width: 100%;
+        justify-content: flex-start;
+        text-align: left;
+        margin: 5px 0;
+      }
+      .module-link small {
+        color: var(--muted);
+      }
+      .module-heading {
+        font-weight: 700;
+        margin: 18px 0 8px;
+      }
+      #status {
+        position: fixed;
+        bottom: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--ink);
+        color: var(--panel);
+        padding: 12px 22px;
+        border-radius: 10px;
+        z-index: 20;
+        max-width: 90vw;
+        box-shadow: var(--shadow);
+        font-size: 13px;
+      }
+      #error {
+        color: var(--warn);
+        white-space: pre-wrap;
+      }
+      dialog {
+        max-width: 620px;
+        width: 90vw;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 24px;
+        background: var(--panel);
+        color: var(--ink);
+      }
+      dialog::backdrop {
+        background: #10271d88;
+      }
+      dialog textarea {
+        width: 100%;
+        height: 240px;
+        background: var(--bg);
+        color: var(--ink);
+        padding: 12px;
+        border: 1px solid var(--line);
+      }
+      [hidden] {
+        display: none !important;
+      }
+      .mobile-back {
+        display: none;
+      }
+      .busy-line {
+        font-size: 13px;
+        color: var(--accent);
+        margin-top: 12px;
+      }
+      input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+      .skip {
+        position: absolute;
+        left: 15px;
+        top: -100px;
+        z-index: 100;
+        background: var(--panel);
+        padding: 10px;
+      }
+      .skip:focus {
+        top: 12px;
+      }
+      @media (max-width: 1100px) {
+        header {
+          padding: 0 20px;
+        }
+        .workspace {
+          grid-template-columns: 175px minmax(0, 1fr);
+        }
+        .main {
+          padding: 20px;
+        }
+        .summary {
+          flex-direction: column;
+          gap: 12px;
+        }
+        .split {
+          height: calc(100vh - 320px);
+        }
+        .detail {
+          padding: 20px;
+        }
+      }
+      @media (max-width: 760px) {
+        header {
+          height: 68px;
+          padding: 0 15px;
+        }
+        .brand {
+          font-size: 14px;
+        }
+        .header-actions .pill {
+          display: none;
+        }
+        .header-actions button {
+          font-size: 12px;
+          padding: 7px;
+        }
+        .workspace {
+          display: block;
+        }
+        aside {
+          padding: 14px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+        .course-name {
+          padding: 0;
+          margin: 0;
+        }
+        .archive-info {
+          margin: 2px 0 12px;
+          padding: 0;
+        }
+        nav {
+          flex-direction: row;
+          overflow: auto;
+        }
+        nav button {
+          white-space: nowrap;
+          gap: 10px;
+        }
+        .side-foot {
+          display: none;
+        }
+        .main {
+          padding: 16px;
+        }
+        .summary h1 {
+          font-size: 24px;
+        }
+        .split {
+          display: block;
+          height: auto;
+          min-height: 400px;
+        }
+        .catalog {
+          border-right: 0;
+          max-height: 60vh;
+        }
+        .detail {
+          display: none;
+          min-height: 400px;
+        }
+        .split.show-detail .catalog {
+          display: none;
+        }
+        .split.show-detail .detail {
+          display: block;
+        }
+        .mobile-back {
+          display: inline-flex;
+          margin-bottom: 18px;
+        }
+        .features {
+          grid-template-columns: 1fr;
+          gap: 14px;
+        }
+        .welcome {
+          padding-top: 36px;
+        }
+        .dropzone {
+          padding: 25px 18px;
+        }
+        .toolbar select {
+          max-width: 115px;
+        }
+        footer {
+          flex-direction: column;
+          gap: 7px;
+        }
+        .summary-actions button {
+          font-size: 12px;
+        }
+        .pill {
+          font-size: 11px;
+        }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        button {
+          transition:
+            background 0.15s,
+            border-color 0.15s;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">▤</span
+        ><span>Canvas Export Explorer</span>
+      </div>
+      <div class="header-actions">
+        <span class="pill">Offline · Read only</span
+        ><button id="theme" aria-label="Switch color theme">Dark theme</button
+        ><button id="open">Open export</button>
+      </div>
+    </header>
+    <input id="file" type="file" accept=".imscc,.zip" hidden />
+    <main id="main">
+      <section class="welcome" id="welcome">
+        <div class="intro">
+          <p class="eyebrow">Your course, unpacked</p>
+          <h1>A clearer view of<br />your Canvas export.</h1>
+          <p>
+            Explore course content, copy what you need, and recover your files.
+            All from one export, right here on your computer.
+          </p>
+        </div>
+        <div class="dropzone" id="drop">
+          <div class="drop-symbol" aria-hidden="true">↧</div>
+          <h2>Drop your Canvas export here</h2>
+          <p class="muted">
+            Choose an .imscc file or a ZIP of a Canvas course export
+          </p>
+          <button class="primary" id="choose">Choose export file</button>
+          <div id="loading" class="busy-line" role="status" hidden></div>
+          <p id="error" role="alert" hidden></p>
+        </div>
+        <div class="features">
+          <section>
+            <span class="number">01 / EXPLORE</span>
+            <h3>Follow the course structure</h3>
+            <p>
+              Browse modules, pages, assignments, discussions, quizzes, and
+              course settings.
+            </p>
+          </section>
+          <section>
+            <span class="number">02 / REUSE</span>
+            <h3>Copy the useful parts</h3>
+            <p>
+              Read clean previews, copy text or HTML, and inspect the original
+              source data.
+            </p>
+          </section>
+          <section>
+            <span class="number">03 / RECOVER</span>
+            <h3>Take your files with you</h3>
+            <p>
+              Download one file, a selection, or the entire archive with its
+              folders intact.
+            </p>
+          </section>
+        </div>
+        <footer>
+          <span>No account, installation, or upload required</span
+          ><span>Canvas LMS exports · Local processing</span>
+        </footer>
+      </section>
+      <section
+        id="workspace"
+        class="workspace"
+        hidden
+        aria-label="Course explorer"
+      >
+        <aside>
+          <p class="eyebrow" style="padding: 0 10px; margin: 0">
+            Course archive
+          </p>
+          <div class="course-name" id="courseName"></div>
+          <div class="archive-info" id="archiveInfo"></div>
+          <nav id="nav" aria-label="Content categories"></nav>
+          <div class="side-foot">
+            Your original export stays unchanged. External links open only when
+            selected.
+          </div>
+        </aside>
+        <div class="main">
+          <div class="summary">
+            <div>
+              <p class="eyebrow">Course library</p>
+              <h1 id="viewTitle">All content</h1>
+              <p id="viewSummary"></p>
+            </div>
+            <div class="summary-actions">
+              <button id="downloadSelected" disabled>Download selected</button
+              ><button id="downloadView">Download view</button
+              ><button id="downloadAll">All files ZIP</button>
+            </div>
+          </div>
+          <div class="toolbar">
+            <div class="search">
+              <label class="skip" for="search">Search this view</label
+              ><input
+                id="search"
+                type="search"
+                placeholder="Search titles, paths, and course text…"
+                aria-label="Search titles, paths, and course text in this view"
+              />
+            </div>
+            <select id="sort" aria-label="Sort results">
+              <option value="course">Course order</option>
+              <option value="az">Title A–Z</option>
+              <option value="size">Largest files</option>
+            </select>
+          </div>
+          <div class="split" id="split">
+            <section class="catalog" aria-label="Content list">
+              <div class="list-head">
+                <label
+                  ><input type="checkbox" id="selectAll" /> Select
+                  results</label
+                ><span id="resultCount" role="status"></span>
+              </div>
+              <div class="list" id="list"></div>
+            </section>
+            <article class="detail" id="detail" aria-label="Content preview">
+              <div class="empty">Select an item to explore its content</div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+    <div id="status" role="status" hidden></div>
+    <dialog id="copyDialog">
+      <h2>Copy content</h2>
+      <p>
+        Automatic clipboard access is unavailable. Select and copy the text
+        below.
+      </p>
+      <textarea id="copyFallback" aria-label="Text to copy" readonly></textarea
+      ><button id="closeCopy">Close</button>
+    </dialog>
+    <script>
+      "use strict";
+      const $ = (id) => document.getElementById(id),
+        esc = (s) =>
+          String(s ?? "").replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[c],
+          );
+      const decode = new TextDecoder(),
+        encode = new TextEncoder();
+      const all = (n, name) => Array.from(n.getElementsByTagNameNS("*", name));
+      const one = (n, name) => all(n, name)[0];
+      const value = (n, name) => one(n, name)?.textContent?.trim() || "";
+      const direct = (n, name) =>
+        Array.from(n.children || []).filter((x) => x.localName === name);
+      const xml = (s) => {
+        const d = new DOMParser().parseFromString(s, "application/xml");
+        if (d.getElementsByTagName("parsererror").length)
+          throw Error("Invalid XML");
+        return d;
+      };
+      const plain = (s) => {
+        const d = new DOMParser().parseFromString(s, "text/html");
+        d.querySelectorAll("script,style").forEach((n) => n.remove());
+        d.querySelectorAll("br,p,div,h1,h2,h3,li,tr").forEach((n) =>
+          n.append("\n"),
+        );
+        return d.body.textContent.trim();
+      };
+      const bytes = (n) =>
+        n < 1024
+          ? n + " B"
+          : n < 1048576
+            ? (n / 1024).toFixed(1) + " KB"
+            : n < 1073741824
+              ? (n / 1048576).toFixed(1) + " MB"
+              : (n / 1073741824).toFixed(2) + " GB";
+      const ext = (p) => p.split(".").pop().toLowerCase();
+      const textFile = (p) =>
+        /\.(xml|qti|html?|txt|json|csv|tsv|md|css|js|svg|vtt|srt|log|yaml|yml)$/i.test(
+          p,
+        );
+      const mime = (p) =>
+        ({
+          png: "image/png",
+          jpg: "image/jpeg",
+          jpeg: "image/jpeg",
+          gif: "image/gif",
+          webp: "image/webp",
+          avif: "image/avif",
+          bmp: "image/bmp",
+          mp3: "audio/mpeg",
+          m4a: "audio/mp4",
+          ogg: "audio/ogg",
+          wav: "audio/wav",
+          mp4: "video/mp4",
+          webm: "video/webm",
+          pdf: "application/pdf",
+          html: "text/html",
+          htm: "text/html",
+          xml: "application/xml",
+          json: "application/json",
+          txt: "text/plain",
+        })[ext(p)] || "application/octet-stream";
+      let state = null,
+        category = "All content",
+        current = null,
+        tab = "preview",
+        visible = [],
+        selected = new Set(),
+        loadID = 0,
+        renderID = 0,
+        toastTimer;
+      const categories = [
+        "All content",
+        "Modules",
+        "Pages",
+        "Assignments",
+        "Quizzes & question banks",
+        "Discussions & announcements",
+        "Links & tools",
+        "Files",
+        "Syllabus",
+        "Course settings",
+        "Other content",
+        "All files",
+      ];
+      function toast(s) {
+        $("status").textContent = s;
+        $("status").hidden = false;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => ($("status").hidden = true), 4500);
+      }
+      function fail(e) {
+        toast(e.message || String(e));
+        console.error(e);
+      }
+      function safePath(p) {
+        if (
+          p.includes("\\") ||
+          p.startsWith("/") ||
+          /^[a-z]:/i.test(p) ||
+          p.split("/").some((x) => x === "..") ||
+          /[\x00-\x1f]/.test(p)
+        )
+          throw Error("The archive contains an unsafe file path.");
+        return p.replace(/^\.\//, "");
+      }
+      const crcTable = Uint32Array.from({ length: 256 }, (_, n) => {
+        for (let i = 0; i < 8; i++)
+          n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1;
+        return n >>> 0;
+      });
+      function crc32(b) {
+        let c = 0xffffffff;
+        for (const v of b) c = crcTable[(c ^ v) & 255] ^ (c >>> 8);
+        return (c ^ 0xffffffff) >>> 0;
+      }
+      class Archive {
+        constructor(file, entries) {
+          this.file = file;
+          this.entries = entries;
+          this.map = new Map(entries.map((e) => [e.path, e]));
+          this.cache = new Map();
+        }
+        static async open(file) {
+          if (file.size < 22)
+            throw Error("This file is not a valid Canvas ZIP export.");
+          const tail = new Uint8Array(
+              await file.slice(Math.max(0, file.size - 65557)).arrayBuffer(),
+            ),
+            v = new DataView(tail.buffer);
+          let end = -1;
+          for (let i = tail.length - 22; i >= 0; i--)
+            if (
+              v.getUint32(i, true) === 0x06054b50 &&
+              i + 22 + v.getUint16(i + 20, true) === tail.length
+            ) {
+              end = i;
+              break;
+            }
+          if (end < 0)
+            throw Error(
+              "ZIP directory not found. The export may be incomplete.",
+            );
+          if (v.getUint16(end + 4, true) || v.getUint16(end + 6, true))
+            throw Error("Multi-part ZIP files are not supported.");
+          let count = v.getUint16(end + 10, true),
+            size = v.getUint32(end + 12, true),
+            offset = v.getUint32(end + 16, true);
+          if (count === 65535 || size === 0xffffffff || offset === 0xffffffff) {
+            const absoluteEnd = file.size - tail.length + end;
+            if (absoluteEnd < 20) throw Error("ZIP64 locator is missing.");
+            const locator = new DataView(
+              await file.slice(absoluteEnd - 20, absoluteEnd).arrayBuffer(),
+            );
+            if (
+              locator.getUint32(0, true) !== 0x07064b50 ||
+              locator.getUint32(4, true) !== 0 ||
+              locator.getUint32(16, true) !== 1
+            )
+              throw Error("Invalid or multi-part ZIP64 archive.");
+            const position = Number(locator.getBigUint64(8, true));
+            if (!Number.isSafeInteger(position))
+              throw Error("ZIP64 offset exceeds safe limits.");
+            const z = new DataView(
+              await file.slice(position, position + 56).arrayBuffer(),
+            );
+            if (
+              z.byteLength < 56 ||
+              z.getUint32(0, true) !== 0x06064b50 ||
+              z.getUint32(16, true) ||
+              z.getUint32(20, true)
+            )
+              throw Error("Invalid ZIP64 directory.");
+            count = Number(z.getBigUint64(32, true));
+            size = Number(z.getBigUint64(40, true));
+            offset = Number(z.getBigUint64(48, true));
+            if (![count, size, offset].every(Number.isSafeInteger))
+              throw Error("ZIP64 directory exceeds safe limits.");
+          }
+          if (count > 200000 || size > 128 * 1048576)
+            throw Error(
+              "The archive directory exceeds the viewer limit (200,000 entries or 128 MB).",
+            );
+          if (offset + size > file.size)
+            throw Error("The ZIP directory is truncated.");
+          const buf = new Uint8Array(
+              await file.slice(offset, offset + size).arrayBuffer(),
+            ),
+            d = new DataView(buf.buffer),
+            entries = [],
+            paths = new Set();
+          let p = 0;
+          for (let i = 0; i < count; i++) {
+            if (p + 46 > buf.length || d.getUint32(p, true) !== 0x02014b50)
+              throw Error("Invalid ZIP directory entry.");
+            const flags = d.getUint16(p + 8, true),
+              method = d.getUint16(p + 10, true),
+              nl = d.getUint16(p + 28, true),
+              el = d.getUint16(p + 30, true),
+              cl = d.getUint16(p + 32, true);
+            let compressed = d.getUint32(p + 20, true),
+              size = d.getUint32(p + 24, true),
+              at = d.getUint32(p + 42, true);
+            if (p + 46 + nl + el + cl > buf.length)
+              throw Error("Truncated ZIP entry.");
+            const path = safePath(
+              decode.decode(buf.subarray(p + 46, p + 46 + nl)),
+            );
+            if (flags & 1) throw Error("Encrypted archives are not supported.");
+            if ([compressed, size, at].includes(0xffffffff)) {
+              let extra = p + 46 + nl,
+                found = false;
+              while (extra + 4 <= p + 46 + nl + el) {
+                const tag = d.getUint16(extra, true),
+                  len = d.getUint16(extra + 2, true);
+                extra += 4;
+                if (extra + len > p + 46 + nl + el)
+                  throw Error("Invalid ZIP extra field.");
+                if (tag === 1) {
+                  let cursor = extra;
+                  const read64 = () => {
+                    if (cursor + 8 > extra + len)
+                      throw Error("Truncated ZIP64 field.");
+                    const n = Number(d.getBigUint64(cursor, true));
+                    cursor += 8;
+                    if (!Number.isSafeInteger(n))
+                      throw Error("ZIP64 entry exceeds safe limits.");
+                    return n;
+                  };
+                  if (size === 0xffffffff) size = read64();
+                  if (compressed === 0xffffffff) compressed = read64();
+                  if (at === 0xffffffff) at = read64();
+                  found = true;
+                  break;
+                }
+                extra += len;
+              }
+              if (!found) throw Error("Missing ZIP64 entry data.");
+            }
+            if (![0, 8].includes(method))
+              throw Error("Unsupported ZIP compression method: " + method);
+            if (paths.has(path)) throw Error("Duplicate archive path: " + path);
+            paths.add(path);
+            if (!path.endsWith("/"))
+              entries.push({
+                path,
+                size,
+                compressed,
+                method,
+                crc: d.getUint32(p + 16, true),
+                offset: at,
+                time: d.getUint16(p + 12, true),
+                date: d.getUint16(p + 14, true),
+              });
+            p += 46 + nl + el + cl;
+          }
+          return new Archive(file, entries);
+        }
+        async packed(e) {
+          const h = new DataView(
+            await this.file.slice(e.offset, e.offset + 30).arrayBuffer(),
+          );
+          if (h.byteLength !== 30 || h.getUint32(0, true) !== 0x04034b50)
+            throw Error("Invalid local ZIP header: " + e.path);
+          const start =
+            e.offset + 30 + h.getUint16(26, true) + h.getUint16(28, true);
+          if (start + e.compressed > this.file.size)
+            throw Error("Truncated file: " + e.path);
+          return this.file.slice(start, start + e.compressed);
+        }
+        async read(path) {
+          const e = this.map.get(path);
+          if (!e) throw Error("File missing from export: " + path);
+          if (e.size > 536870912)
+            throw Error(
+              "This file is too large to preview or extract individually (512 MB limit). It can still be included in a bulk ZIP.",
+            );
+          const packed = await this.packed(e);
+          let data;
+          if (e.method === 8) {
+            try {
+              const reader = packed
+                  .stream()
+                  .pipeThrough(new DecompressionStream("deflate-raw"))
+                  .getReader(),
+                chunks = [];
+              let total = 0;
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                total += value.length;
+                if (total > e.size) {
+                  await reader.cancel();
+                  throw Error("Expanded data exceeds the declared file size.");
+                }
+                chunks.push(value);
+              }
+              data = new Uint8Array(total);
+              let at = 0;
+              for (const chunk of chunks) {
+                data.set(chunk, at);
+                at += chunk.length;
+              }
+            } catch {
+              throw Error(
+                "Could not decompress " +
+                  path +
+                  ". The file may be corrupt, or the browser may need updating.",
+              );
+            }
+          } else data = new Uint8Array(await packed.arrayBuffer());
+          if (data.length !== e.size || crc32(data) !== e.crc)
+            throw Error("Integrity check failed: " + path);
+          return data;
+        }
+        async text(path) {
+          if (!this.cache.has(path)) {
+            const e = this.map.get(path);
+            if (e?.size > 8 * 1048576)
+              throw Error(
+                "Text preview is limited to 8 MB. Download the original file to inspect it.",
+              );
+            this.cache.set(path, decode.decode(await this.read(path)));
+          }
+          return this.cache.get(path);
+        }
+        async zip(paths) {
+          const entries = [...new Set(paths)]
+            .map((p) => this.map.get(p))
+            .filter(Boolean);
+          if (entries.length > 65534)
+            throw Error("Too many files for a ZIP download.");
+          const parts = [],
+            central = [];
+          let offset = 0,
+            centralSize = 0;
+          for (const e of entries) {
+            if (e.size > 0xffffffff || e.compressed > 0xffffffff)
+              throw Error(
+                "This file exceeds the 4 GB selection ZIP limit. Use All files ZIP to retain the original archive.",
+              );
+            const name = encode.encode(e.path),
+              packed = await this.packed(e),
+              h = new Uint8Array(30 + name.length),
+              d = new DataView(h.buffer);
+            d.setUint32(0, 0x04034b50, true);
+            d.setUint16(4, 20, true);
+            d.setUint16(6, 0x800, true);
+            d.setUint16(8, e.method, true);
+            d.setUint16(10, e.time, true);
+            d.setUint16(12, e.date, true);
+            d.setUint32(14, e.crc, true);
+            d.setUint32(18, e.compressed, true);
+            d.setUint32(22, e.size, true);
+            d.setUint16(26, name.length, true);
+            h.set(name, 30);
+            const c = new Uint8Array(46 + name.length),
+              v = new DataView(c.buffer);
+            v.setUint32(0, 0x02014b50, true);
+            v.setUint16(4, 20, true);
+            v.setUint16(6, 20, true);
+            v.setUint16(8, 0x800, true);
+            v.setUint16(10, e.method, true);
+            v.setUint16(12, e.time, true);
+            v.setUint16(14, e.date, true);
+            v.setUint32(16, e.crc, true);
+            v.setUint32(20, e.compressed, true);
+            v.setUint32(24, e.size, true);
+            v.setUint16(28, name.length, true);
+            v.setUint32(42, offset, true);
+            c.set(name, 46);
+            parts.push(h, packed);
+            central.push(c);
+            offset += h.length + e.compressed;
+            centralSize += c.length;
+            if (offset + centralSize > 0xffffffff)
+              throw Error(
+                "This selection exceeds the 4 GB ZIP limit. Download smaller selections.",
+              );
+          }
+          const end = new Uint8Array(22),
+            v = new DataView(end.buffer);
+          v.setUint32(0, 0x06054b50, true);
+          v.setUint16(8, entries.length, true);
+          v.setUint16(10, entries.length, true);
+          v.setUint32(12, centralSize, true);
+          v.setUint32(16, offset, true);
+          return new Blob([...parts, ...central, end], {
+            type: "application/zip",
+          });
+        }
+      }
+      function normalize(p) {
+        const out = [];
+        for (const part of p.split("/")) {
+          if (part === "..") out.pop();
+          else if (part && part !== ".") out.push(part);
+        }
+        return out.join("/");
+      }
+      function resolvePath(raw, base = "") {
+        let p;
+        try {
+          p = decodeURIComponent(raw);
+        } catch {
+          p = raw;
+        }
+        p = p
+          .replace(/\$IMS-CC-FILEBASE\$\/?/g, "web_resources/")
+          .replace(/^\$CANVAS_COURSE_REFERENCE\$\//, "");
+        p = p.split(/[?#]/)[0];
+        const candidates = [
+          p,
+          p.replace(/^\/+/, ""),
+          normalize(base.slice(0, base.lastIndexOf("/") + 1) + p),
+          p.replace(/^\.\.\//, ""),
+        ];
+        return candidates.find((x) => state.archive.map.has(x)) || null;
+      }
+      function kind(type, path) {
+        if (path.startsWith("wiki_content/")) return "Pages";
+        if (type.includes("imsqti") || /assessment.*\.xml|\.qti$/i.test(path))
+          return "Quizzes & question banks";
+        if (type.includes("imsdt")) return "Discussions & announcements";
+        if (type.includes("imswl") || type.includes("basiclti"))
+          return "Links & tools";
+        if (/assignment_settings\.xml/.test(path)) return "Assignments";
+        if (path.startsWith("web_resources/")) return "Files";
+        if (path.startsWith("course_settings/")) return "Course settings";
+        return "Other content";
+      }
+      function leaves(doc) {
+        return Array.from(doc.documentElement.querySelectorAll("*"))
+          .filter((n) => !n.children.length && n.textContent.trim())
+          .map((n) => [n.localName, n.textContent.trim()]);
+      }
+      async function build(archive, file) {
+        const manifest = xml(await archive.text("imsmanifest.xml"));
+        if (
+          !archive.entries.some((e) => e.path.startsWith("course_settings/")) &&
+          !/canvas\.instructure\.com/i.test(
+            await archive.text("imsmanifest.xml"),
+          )
+        )
+          throw Error(
+            "This archive does not appear to be a Canvas LMS course export.",
+          );
+        const records = [],
+          byId = new Map(),
+          byPath = new Map(),
+          titles = new Map(),
+          warnings = [];
+        for (const i of all(manifest, "item")) {
+          const ref = i.getAttribute("identifierref");
+          if (ref) titles.set(ref, value(i, "title"));
+        }
+        const resources = all(manifest, "resource"),
+          resourcePaths = new Map(
+            resources.map((r) => [
+              r.getAttribute("identifier"),
+              all(r, "file").map((f) => f.getAttribute("href")),
+            ]),
+          );
+        for (const r of resources) {
+          const id = r.getAttribute("identifier"),
+            files = [
+              ...new Set(
+                [
+                  r.getAttribute("href"),
+                  ...all(r, "file").map((f) => f.getAttribute("href")),
+                ].filter(Boolean),
+              ),
+            ],
+            present = files.filter((p) => archive.map.has(p));
+          let path = r.getAttribute("href");
+          if (!present.includes(path)) path = present[0];
+          if (!path) {
+            warnings.push("Resource has no exported file: " + id);
+            continue;
+          }
+          if (path.startsWith("course_settings/")) continue;
+          if (present.some((p) => p.endsWith("/assignment_settings.xml")))
+            path = present.find((p) => p.endsWith("/assignment_settings.xml"));
+          let cat = kind(r.getAttribute("type") || "", path),
+            title = titles.get(id) || path.split("/").pop(),
+            doc = null,
+            body = "",
+            url = "";
+          try {
+            if (textFile(path)) {
+              const s = await archive.text(path);
+              if (/\.html?$/i.test(path)) {
+                const d = new DOMParser().parseFromString(s, "text/html");
+                title = titles.get(id) || d.title || title;
+                body = d.body.innerHTML;
+              } else if (/\.(xml|qti)$/i.test(path)) {
+                doc = xml(s);
+                title =
+                  value(doc, "title") ||
+                  one(doc, "assessment")?.getAttribute("title") ||
+                  value(
+                    all(doc, "qtimetadatafield").find(
+                      (f) => value(f, "fieldlabel") === "bank_title",
+                    ) || doc,
+                    "fieldentry",
+                  ) ||
+                  title;
+                if (doc.documentElement.localName === "assignment")
+                  cat = "Assignments";
+                body = value(doc, "text") || value(doc, "description");
+                url =
+                  one(doc, "url")?.getAttribute("href") ||
+                  value(doc, "url") ||
+                  value(doc, "launch_url");
+              }
+            }
+          } catch (e) {
+            warnings.push(path + ": " + e.message);
+          }
+          if (cat === "Assignments") {
+            const html = present.find((p) => /\.html?$/i.test(p));
+            if (html) body = await archive.text(html);
+          }
+          const deps = all(r, "dependency")
+            .flatMap(
+              (d) => resourcePaths.get(d.getAttribute("identifierref")) || [],
+            )
+            .filter((p) => archive.map.has(p));
+          const rec = {
+            id,
+            title,
+            category: cat,
+            path,
+            files: [...new Set([...present, ...deps])],
+            body,
+            doc,
+            url,
+          };
+          records.push(rec);
+          byId.set(id, rec);
+          for (const p of present) if (!byPath.has(p)) byPath.set(p, rec);
+        }
+        // Fold companion metadata resources into the course items that depend on them.
+        for (const rec of [...records]) {
+          const parent = records.find(
+            (other) =>
+              other !== rec &&
+              other.path !== rec.path &&
+              rec.files.every((p) => other.files.includes(p)),
+          );
+          if (parent) {
+            records.splice(records.indexOf(rec), 1);
+            byId.set(rec.id, parent);
+            for (const p of rec.files) byPath.set(p, parent);
+          }
+        }
+        for (const rec of records.filter(
+          (r) => r.category === "Quizzes & question banks",
+        )) {
+          for (const p of rec.files) {
+            try {
+              if (p.endsWith("assessment_meta.xml")) {
+                rec.metaDoc = xml(await archive.text(p));
+                rec.body = value(rec.metaDoc, "description") || rec.body;
+              }
+              if (/(?:qti|xml\.qti)$/i.test(p)) {
+                const d = xml(await archive.text(p));
+                if (
+                  all(d, "item").length >
+                  all(rec.questionDoc || rec.doc, "item").length
+                )
+                  rec.questionDoc = d;
+              }
+            } catch (e) {
+              warnings.push(p + ": " + e.message);
+            }
+          }
+        }
+        // Non-CC QTI files often contain question banks and the full versions of quiz questions.
+        for (const e of archive.entries.filter(
+          (e) =>
+            /\.(qti|xml)$/i.test(e.path) &&
+            !byPath.has(e.path) &&
+            !e.path.startsWith("course_settings/"),
+        )) {
+          try {
+            const d = xml(await archive.text(e.path));
+            if (
+              !["questestinterop", "assessment", "objectbank"].includes(
+                d.documentElement.localName,
+              )
+            )
+              continue;
+            const assessment = one(d, "assessment"),
+              id =
+                assessment?.getAttribute("ident") ||
+                e.path
+                  .split("/")
+                  .pop()
+                  .replace(/\.xml\.qti$/, "");
+            const existing = byId.get(id);
+            if (existing && existing.category === "Quizzes & question banks") {
+              existing.files.push(e.path);
+              existing.questionDoc = d;
+              byPath.set(e.path, existing);
+            } else {
+              const rec = {
+                id: "bank:" + e.path,
+                title:
+                  assessment?.getAttribute("title") ||
+                  value(
+                    all(d, "qtimetadatafield").find(
+                      (f) => value(f, "fieldlabel") === "bank_title",
+                    ) || d,
+                    "fieldentry",
+                  ) ||
+                  one(d, "objectbank")?.getAttribute("title") ||
+                  e.path.split("/").pop(),
+                category: "Quizzes & question banks",
+                path: e.path,
+                files: [e.path],
+                doc: d,
+                body: "",
+              };
+              records.push(rec);
+              byPath.set(e.path, rec);
+            }
+          } catch (e) {
+            warnings.push(e.message);
+          }
+        }
+        let courseDoc = null;
+        try {
+          if (archive.map.has("course_settings/course_settings.xml"))
+            courseDoc = xml(
+              await archive.text("course_settings/course_settings.xml"),
+            );
+        } catch (e) {
+          warnings.push(e.message);
+        }
+        const syllabus = value(courseDoc || manifest, "syllabus_body");
+        if (syllabus)
+          records.push({
+            id: "syllabus",
+            title: "Course syllabus",
+            category: "Syllabus",
+            path: "course_settings/course_settings.xml",
+            files: ["course_settings/course_settings.xml"],
+            body: syllabus,
+            doc: courseDoc,
+          });
+        const org = one(manifest, "organization");
+        const moduleNodes = org
+          ? all(org, "item").filter(
+              (i) =>
+                !i.getAttribute("identifierref") &&
+                direct(i, "item").length &&
+                direct(i, "title").length,
+            )
+          : [];
+        for (const m of moduleNodes) {
+          const rec = {
+            id: "module:" + m.getAttribute("identifier"),
+            title: direct(m, "title")[0]?.textContent || "Module",
+            category: "Modules",
+            path: archive.map.has("course_settings/module_meta.xml")
+              ? "course_settings/module_meta.xml"
+              : "imsmanifest.xml",
+            files: archive.map.has("course_settings/module_meta.xml")
+              ? ["course_settings/module_meta.xml"]
+              : ["imsmanifest.xml"],
+            module: m,
+            body: "",
+          };
+          rec.files = [
+            ...new Set([
+              ...rec.files,
+              ...all(m, "item").flatMap(
+                (i) => byId.get(i.getAttribute("identifierref"))?.files || [],
+              ),
+            ]),
+          ];
+          records.push(rec);
+        }
+        // No archive entry is hidden, including unknown Canvas extensions and unreferenced files.
+        const fileRecords = archive.entries.map((e) => ({
+          id: "file:" + e.path,
+          title: e.path.split("/").pop(),
+          category:
+            e.path.startsWith("course_settings/") ||
+            e.path === "imsmanifest.xml"
+              ? "Course settings"
+              : "Files",
+          path: e.path,
+          files: [e.path],
+          body: "",
+          size: e.size,
+          raw: true,
+        }));
+        for (const rec of fileRecords)
+          if (rec.category === "Course settings" || !byPath.has(rec.path))
+            records.push(rec);
+        const order = new Map();
+        let sequence = 0;
+        for (const item of all(manifest, "item")) {
+          const key =
+            item.getAttribute("identifierref") ||
+            "module:" + item.getAttribute("identifier");
+          if (!order.has(key)) order.set(key, sequence++);
+        }
+        records.sort(
+          (a, b) => (order.get(a.id) ?? 1e9) - (order.get(b.id) ?? 1e9),
+        );
+        for (const rec of records) {
+          if (
+            rec.raw &&
+            textFile(rec.path) &&
+            (archive.map.get(rec.path)?.size || 0) <= 8 * 1048576
+          ) {
+            try {
+              const content = await archive.text(rec.path);
+              rec.indexText = /\.html?$/i.test(rec.path)
+                ? plain(content)
+                : content;
+            } catch (e) {
+              warnings.push(rec.path + ": " + e.message);
+            }
+          }
+          rec.size = rec.files.reduce(
+            (s, p) => s + (archive.map.get(p)?.size || 0),
+            0,
+          );
+          rec.search = (
+            rec.title +
+            " " +
+            rec.path +
+            " " +
+            plain(rec.body || "") +
+            " " +
+            (rec.doc?.documentElement.textContent || "") +
+            " " +
+            (rec.questionDoc?.documentElement.textContent || "") +
+            " " +
+            (rec.indexText || "")
+          ).toLowerCase();
+        }
+        return {
+          archive,
+          file,
+          records,
+          fileRecords,
+          byId,
+          byPath,
+          courseDoc,
+          warnings,
+          title:
+            value(courseDoc || manifest, "title") ||
+            value(manifest, "string") ||
+            file.name,
+          urls: new Map(),
+        };
+      }
+      async function openFile(file) {
+        if (!file) return;
+        ++renderID;
+        const token = ++loadID;
+        $("loading").textContent =
+          "Reading archive and indexing course content…";
+        $("loading").hidden = false;
+        $("error").hidden = true;
+        $("welcome").hidden = false;
+        $("workspace").hidden = true;
+        $("file").value = "";
+        try {
+          const archive = await Archive.open(file);
+          if (!archive.map.has("imsmanifest.xml"))
+            throw Error(
+              "imsmanifest.xml is missing. Choose a Canvas course export.",
+            );
+          const next = await build(archive, file);
+          if (token !== loadID) return;
+          for (const u of state?.urls.values() || []) URL.revokeObjectURL(u);
+          state = next;
+          selected.clear();
+          current = null;
+          category = "All content";
+          $("search").value = "";
+          $("sort").value = "course";
+          $("courseName").textContent = state.title;
+          $("archiveInfo").textContent =
+            archive.entries.length +
+            " files · " +
+            bytes(file.size) +
+            " archive";
+          $("welcome").hidden = true;
+          $("workspace").hidden = false;
+          renderNav();
+          renderList();
+          $("detail").innerHTML =
+            '<div class="empty"><p class="eyebrow">Ready to explore</p><h2>Your course is unpacked.</h2><p>Select an item for a readable preview, original source, and downloads.</p><p>Use All files to inspect every file in the export.</p></div>';
+          toast(
+            state.warnings.length
+              ? "Opened with " +
+                  state.warnings.length +
+                  " indexing notice(s). See Export report."
+              : "Opened " + state.title,
+          );
+          $("search").focus();
+        } catch (e) {
+          if (token !== loadID) return;
+          $("error").textContent = e.message;
+          $("error").hidden = false;
+          if (state) {
+            $("workspace").hidden = false;
+            toast(
+              "The new export could not be opened. The previous course is still available.",
+            );
+          }
+        } finally {
+          if (token === loadID) $("loading").hidden = true;
+        }
+      }
+      function itemsFor(cat) {
+        if (cat === "All files") return state.fileRecords;
+        if (cat === "All content") return state.records;
+        return state.records.filter((r) => r.category === cat);
+      }
+      function renderNav() {
+        $("nav").replaceChildren();
+        for (const cat of categories) {
+          const b = document.createElement("button");
+          b.setAttribute("aria-current", String(category === cat));
+          b.innerHTML =
+            "<span>" +
+            esc(cat) +
+            "</span><span>" +
+            itemsFor(cat).length +
+            "</span>";
+          b.onclick = () => {
+            category = cat;
+            selected.clear();
+            $("search").value = "";
+            renderNav();
+            renderList();
+            $("split").classList.remove("show-detail");
+          };
+          $("nav").append(b);
+        }
+        const report = document.createElement("button");
+        report.textContent = "Export report";
+        report.onclick = showReport;
+        $("nav").append(report);
+      }
+      function renderList() {
+        if (!state) return;
+        const q = $("search").value.trim().toLowerCase();
+        visible = itemsFor(category).filter((r) =>
+          (
+            r.search || r.title.toLowerCase() + " " + r.path.toLowerCase()
+          ).includes(q),
+        );
+        if ($("sort").value === "az")
+          visible.sort((a, b) => a.title.localeCompare(b.title));
+        if ($("sort").value === "size") visible.sort((a, b) => b.size - a.size);
+        $("viewTitle").textContent = category;
+        $("viewSummary").textContent =
+          category === "All files"
+            ? "Every exported file, with its original path"
+            : category === "Modules"
+              ? "Explore the original course sequence"
+              : "Readable course content and original export data";
+        $("resultCount").textContent = visible.length + " results";
+        $("list").replaceChildren();
+        for (const r of visible) {
+          const row = document.createElement("div");
+          row.className = "row" + (current === r ? " selected" : "");
+          const check = document.createElement("input");
+          check.type = "checkbox";
+          check.checked = selected.has(r.id);
+          check.setAttribute("aria-label", "Select " + r.title);
+          check.onchange = () => {
+            check.checked ? selected.add(r.id) : selected.delete(r.id);
+            updateSelection();
+          };
+          const b = document.createElement("button");
+          b.innerHTML =
+            '<span class="row-title">' +
+            esc(r.title) +
+            '</span><span class="row-meta">' +
+            esc(r.raw ? r.path : r.category) +
+            " · " +
+            bytes(r.size) +
+            "</span>";
+          b.setAttribute("aria-pressed", String(current === r));
+          b.onclick = () => show(r).catch(fail);
+          row.append(check, b);
+          $("list").append(row);
+        }
+        if (!visible.length)
+          $("list").innerHTML =
+            '<div class="empty">No matching items in this view</div>';
+        updateSelection();
+      }
+      function updateSelection() {
+        const count = selected.size;
+        $("downloadSelected").disabled = !count;
+        $("downloadSelected").textContent =
+          "Download selected" + (count ? " (" + count + ")" : "");
+        $("selectAll").checked =
+          visible.length > 0 && visible.every((r) => selected.has(r.id));
+        $("selectAll").indeterminate =
+          visible.some((r) => selected.has(r.id)) && !$("selectAll").checked;
+        $("downloadView").disabled = !visible.length;
+      }
+      async function objectURL(path) {
+        const course = state;
+        if (!course.urls.has(path)) {
+          const b = await course.archive.read(path);
+          course.urls.set(
+            path,
+            URL.createObjectURL(new Blob([b], { type: mime(path) })),
+          );
+        }
+        return course.urls.get(path);
+      }
+      const allowedTags = new Set(
+        "A ABBR ADDRESS ARTICLE ASIDE B BDI BDO BLOCKQUOTE BR CAPTION CITE CODE COL COLGROUP DD DEL DETAILS DFN DIV DL DT EM FIGCAPTION FIGURE FOOTER H1 H2 H3 H4 H5 H6 HEADER HR I IMG INS KBD LI MAIN MARK NAV OL P PRE Q S SAMP SECTION SMALL SPAN STRONG SUB SUMMARY SUP TABLE TBODY TD TFOOT TH THEAD TIME TR U UL VAR AUDIO VIDEO SOURCE".split(
+          " ",
+        ),
+      );
+      async function cleanHTML(html, base) {
+        const d = new DOMParser().parseFromString(html, "text/html"),
+          out = document.createElement("div");
+        out.className = "prose";
+        async function copy(node, parent) {
+          if (node.nodeType === 3) {
+            parent.append(document.createTextNode(node.textContent));
+            return;
+          }
+          if (node.nodeType !== 1) return;
+          const tag = node.tagName;
+          if (
+            [
+              "SCRIPT",
+              "STYLE",
+              "LINK",
+              "META",
+              "BASE",
+              "OBJECT",
+              "EMBED",
+              "SVG",
+              "MATH",
+              "TEMPLATE",
+              "NOSCRIPT",
+            ].includes(tag)
+          )
+            return;
+          if (tag === "IFRAME") {
+            const u = node.getAttribute("src") || "";
+            const p = document.createElement("p");
+            p.className = "notice";
+            p.append("Embedded content is not included offline. ");
+            if (/^https?:\/\//i.test(u)) {
+              const a = document.createElement("a");
+              a.href = u;
+              a.target = "_blank";
+              a.rel = "noopener noreferrer";
+              a.textContent = "Open external content";
+              p.append(a);
+            }
+            parent.append(p);
+            return;
+          }
+          if (!allowedTags.has(tag)) {
+            for (const child of node.childNodes) await copy(child, parent);
+            return;
+          }
+          const el = document.createElement(tag.toLowerCase());
+          for (const a of [
+            "title",
+            "alt",
+            "colspan",
+            "rowspan",
+            "scope",
+            "dir",
+            "lang",
+            "start",
+          ])
+            if (node.hasAttribute(a)) el.setAttribute(a, node.getAttribute(a));
+          if (tag === "A") {
+            const raw = node.getAttribute("href") || "",
+              local = resolvePath(raw, base),
+              ref = raw.match(
+                /\$CANVAS_OBJECT_REFERENCE\$\/[^/]+\/([^?#]+)/,
+              )?.[1];
+            if (local) {
+              el.href = "#";
+              el.dataset.path = local;
+            } else if (ref && state.byId.has(ref)) {
+              el.href = "#";
+              el.dataset.ref = ref;
+            } else if (/^(https?:\/\/|mailto:)/i.test(raw)) {
+              el.href = raw;
+              el.target = "_blank";
+              el.rel = "noopener noreferrer";
+            } else if (raw && !raw.startsWith("#")) {
+              el.title = "This link requires the original Canvas course";
+              el.append("[Canvas link] ");
+            }
+          }
+          if (["IMG", "SOURCE", "AUDIO", "VIDEO"].includes(tag)) {
+            const raw = node.getAttribute("src") || "",
+              local = resolvePath(raw, base);
+            if (
+              local &&
+              /^(image\/(?!svg)|audio\/|video\/)/.test(mime(local))
+            ) {
+              try {
+                el.src = await objectURL(local);
+              } catch {
+                el.alt = "Could not preview " + local;
+              }
+            } else if (tag === "IMG") {
+              el.alt =
+                node.getAttribute("alt") ||
+                "External image unavailable offline";
+            }
+            if (tag === "AUDIO" || tag === "VIDEO") {
+              el.controls = true;
+              el.preload = "none";
+            }
+          }
+          parent.append(el);
+          for (const child of node.childNodes) await copy(child, el);
+        }
+        for (const n of d.body.childNodes) await copy(n, out);
+        return out;
+      }
+      async function material(node) {
+        let s = "";
+        for (const m of all(node, "mattext"))
+          s +=
+            m.getAttribute("texttype") === "text/html"
+              ? m.textContent
+              : "<p>" + esc(m.textContent) + "</p>";
+        for (const m of all(node, "matimage")) {
+          const src = m.getAttribute("uri");
+          if (src) s += '<img src="' + esc(src) + '" alt="Question image">';
+        }
+        return s;
+      }
+      async function quizHTML(r) {
+        let d = r.questionDoc || r.doc;
+        if (!d) return "";
+        const q = all(d, "item");
+        let html = "<h3>Questions (" + q.length + ")</h3>";
+        if (!q.length)
+          html +=
+            '<p class="notice">No question items are included in this quiz export. Check the original source and associated files for additional data.</p>';
+        for (let i = 0; i < q.length; i++) {
+          const n = q[i];
+          html +=
+            "<section><h3>" +
+            esc(i + 1 + ". " + (n.getAttribute("title") || "Question")) +
+            "</h3>";
+          const presentation = one(n, "presentation");
+          if (presentation) {
+            for (const m of direct(presentation, "material"))
+              html += await material(m);
+            const labels = all(presentation, "response_label");
+            if (labels.length) {
+              html += '<ol type="A">';
+              for (const label of labels)
+                html += "<li>" + (await material(label)) + "</li>";
+              html += "</ol>";
+            } else html += await material(presentation);
+          }
+          const meta = all(n, "qtimetadatafield").map((f) => [
+            value(f, "fieldlabel"),
+            value(f, "fieldentry"),
+          ]);
+          if (meta.length)
+            html +=
+              "<details><summary>Question metadata</summary><pre>" +
+              esc(meta.map((x) => x.join(": ")).join("\n")) +
+              "</pre></details>";
+          for (const f of all(n, "itemfeedback"))
+            html +=
+              "<details><summary>Feedback: " +
+              esc(f.getAttribute("ident") || "") +
+              "</summary>" +
+              (await material(f)) +
+              "</details>";
+          const scoring = all(n, "respcondition");
+          if (scoring.length)
+            html +=
+              "<details><summary>Answer and scoring rules</summary><pre>" +
+              esc(
+                scoring
+                  .map((c) => new XMLSerializer().serializeToString(c))
+                  .join("\n"),
+              ) +
+              "</pre></details>";
+          html += "</section><hr>";
+        }
+        return html;
+      }
+      async function getBody(r) {
+        if (r.body) return r.body;
+        if (r.raw && /\.html?$/i.test(r.path))
+          return await state.archive.text(r.path);
+        if (r.raw && /\.(xml|qti)$/i.test(r.path)) {
+          const d = xml(await state.archive.text(r.path));
+          return (
+            value(d, "text") ||
+            value(d, "description") ||
+            value(d, "syllabus_body")
+          );
+        }
+        return "";
+      }
+      function bindLinks(container) {
+        container.addEventListener("click", (e) => {
+          const a = e.target.closest("a[data-path],a[data-ref]");
+          if (!a) return;
+          e.preventDefault();
+          const r = a.dataset.ref
+            ? state.byId.get(a.dataset.ref)
+            : state.byPath.get(a.dataset.path) ||
+              state.fileRecords.find((r) => r.path === a.dataset.path);
+          if (r) show(r).catch(fail);
+        });
+      }
+      async function show(r) {
+        current = r;
+        tab = "preview";
+        renderList();
+        $("split").classList.add("show-detail");
+        await renderDetail();
+        $("detail").scrollTop = 0;
+        if (current === r)
+          $("detail").querySelector("h2")?.focus({ preventScroll: true });
+      }
+      async function renderDetail() {
+        const token = ++renderID,
+          r = current;
+        if (!r) return;
+        const detail = $("detail");
+        detail.innerHTML =
+          '<button class="mobile-back" id="back">← Back to results</button><p class="eyebrow">' +
+          esc(r.category) +
+          '</p><h2 tabindex="-1">' +
+          esc(r.title) +
+          '</h2><p class="path">' +
+          esc(r.path) +
+          '</p><div class="detail-top"><button id="copyText">Copy text</button><button id="copyHtml">Copy HTML</button><button id="copySource">Copy source</button><button id="downloadOriginal">Download original</button>' +
+          (r.files.length > 1
+            ? '<button id="downloadItem">Item files ZIP (' +
+              r.files.length +
+              ")</button>"
+            : "") +
+          '</div><div class="tabs" role="tablist" aria-label="Preview mode">' +
+          ["preview", "source", "details"]
+            .map(
+              (t) =>
+                '<button role="tab" aria-selected="' +
+                (tab === t) +
+                '" aria-controls="content" tabindex="' +
+                (tab === t ? "0" : "-1") +
+                '" id="tab-' +
+                t +
+                '">' +
+                t[0].toUpperCase() +
+                t.slice(1) +
+                "</button>",
+            )
+            .join("") +
+          '</div><div id="content" role="tabpanel" tabindex="0" aria-labelledby="tab-' +
+          tab +
+          '">Loading preview…</div>';
+        $("back").onclick = () => {
+          $("split").classList.remove("show-detail");
+          $("list").querySelector('[aria-pressed="true"]')?.focus();
+        };
+        const modes = ["preview", "source", "details"];
+        async function activate(mode) {
+          tab = mode;
+          await renderDetail();
+          $("tab-" + mode)?.focus();
+        }
+        for (const t of modes) {
+          $("tab-" + t).onclick = () => activate(t).catch(fail);
+          $("tab-" + t).onkeydown = (e) => {
+            let index = modes.indexOf(t);
+            if (e.key === "ArrowRight") index = (index + 1) % modes.length;
+            else if (e.key === "ArrowLeft")
+              index = (index + modes.length - 1) % modes.length;
+            else if (e.key === "Home") index = 0;
+            else if (e.key === "End") index = modes.length - 1;
+            else return;
+            e.preventDefault();
+            activate(modes[index]).catch(fail);
+          };
+        }
+        $("copyText").onclick = () => copyCurrent("text");
+        $("copyHtml").onclick = () => copyCurrent("html");
+        $("copySource").onclick = () => copyCurrent("source");
+        $("downloadOriginal").onclick = () => downloadFile(r.path);
+        if ($("downloadItem"))
+          $("downloadItem").onclick = () =>
+            downloadZIP(r.files, "item-files.zip");
+        const container = document.createElement("div");
+        try {
+          if (tab === "source") {
+            if (textFile(r.path)) {
+              const pre = document.createElement("pre");
+              pre.textContent = await state.archive.text(r.path);
+              container.append(pre);
+            } else
+              container.innerHTML =
+                '<p class="notice">This is a binary file. Download the original to open it in its application.</p>';
+          } else if (tab === "details") {
+            let d = r.metaDoc || r.doc;
+            if (!d && /\.(xml|qti)$/i.test(r.path))
+              try {
+                d = xml(await state.archive.text(r.path));
+              } catch {}
+            container.innerHTML = "<h3>Exported files</h3>";
+            for (const p of r.files) {
+              const b = document.createElement("button");
+              b.className = "file-link";
+              b.textContent =
+                p + " · " + bytes(state.archive.map.get(p)?.size || 0);
+              b.onclick = () => downloadFile(p);
+              container.append(b);
+            }
+            if (d) {
+              const h = document.createElement("h3");
+              h.textContent = "Metadata";
+              container.append(h);
+              const table = document.createElement("table");
+              table.className = "metadata";
+              for (const [k, v] of leaves(d)) {
+                const row = table.insertRow();
+                const th = document.createElement("th");
+                th.scope = "row";
+                th.textContent = k;
+                const td = document.createElement("td");
+                td.textContent = v;
+                row.append(th, td);
+              }
+              container.append(table);
+            }
+          } else if (r.module) {
+            const intro = document.createElement("p");
+            intro.className = "muted";
+            intro.textContent =
+              "Original module sequence · " +
+              all(r.module, "item").length +
+              " entries";
+            container.append(intro);
+            function moduleList(node, level = 0) {
+              for (const i of direct(node, "item")) {
+                const ref = i.getAttribute("identifierref"),
+                  rec = state.byId.get(ref),
+                  title = direct(i, "title")[0]?.textContent || "Untitled";
+                const el = document.createElement(rec ? "button" : "p");
+                el.className = rec ? "module-link" : "module-heading";
+                el.style.marginLeft = Math.min(level * 12, 48) + "px";
+                el.textContent = title;
+                if (rec) el.onclick = () => show(rec).catch(fail);
+                else if (ref) {
+                  el.textContent += " — content not included in export";
+                  el.className = "notice";
+                }
+                container.append(el);
+                moduleList(i, level + 1);
+              }
+            }
+            moduleList(r.module);
+          } else {
+            let body = await getBody(r);
+            if (r.category === "Quizzes & question banks") {
+              const metaPath = r.files.find((p) =>
+                p.endsWith("assessment_meta.xml"),
+              );
+              if (metaPath) {
+                const meta = xml(await state.archive.text(metaPath));
+                body = value(meta, "description") || body;
+              }
+              body += await quizHTML(r);
+            }
+            if (body) container.append(await cleanHTML(body, r.path));
+            else if (/^image\/(?!svg)/.test(mime(r.path))) {
+              const img = document.createElement("img");
+              img.className = "media-preview";
+              img.alt = r.title;
+              img.src = await objectURL(r.path);
+              container.append(img);
+            } else if (/^(audio|video)\//.test(mime(r.path))) {
+              const el = document.createElement(
+                mime(r.path).startsWith("audio") ? "audio" : "video",
+              );
+              el.controls = true;
+              el.className = "media-preview";
+              el.src = await objectURL(r.path);
+              container.append(el);
+            } else if (/\.(docx|pptx|xlsx)$/i.test(r.path)) {
+              await officePreview(r, container);
+            } else if (textFile(r.path)) {
+              const s = await state.archive.text(r.path);
+              if (/\.(xml|qti)$/i.test(r.path)) {
+                const d = r.doc || xml(s);
+                const table = document.createElement("table");
+                table.className = "metadata";
+                for (const [k, v] of leaves(d)) {
+                  const tr = table.insertRow();
+                  const th = document.createElement("th");
+                  th.scope = "row";
+                  th.textContent = k;
+                  const td = document.createElement("td");
+                  td.textContent = v;
+                  tr.append(th, td);
+                }
+                container.append(table);
+              } else {
+                const pre = document.createElement("pre");
+                pre.textContent = s;
+                container.append(pre);
+              }
+            } else
+              container.innerHTML =
+                '<p class="notice">' +
+                esc(ext(r.path).toUpperCase()) +
+                " file · " +
+                bytes(r.size) +
+                ". Download the original to view it in a compatible application.</p>";
+            if (r.url) {
+              const notice = document.createElement("p");
+              notice.className = "notice";
+              notice.append("External resource: ");
+              if (/^https?:\/\//i.test(r.url)) {
+                const a = document.createElement("a");
+                a.href = r.url;
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                a.textContent = r.url;
+                notice.append(a);
+              } else notice.append(r.url);
+              container.prepend(notice);
+            }
+          }
+        } catch (e) {
+          container.innerHTML = '<p class="notice">' + esc(e.message) + "</p>";
+        }
+        if (token !== renderID) return;
+        $("content").replaceChildren(container);
+        bindLinks(container);
+      }
+      async function officePreview(r, container) {
+        container.innerHTML =
+          '<p class="notice">Text preview only. Download the original for complete formatting, images, and layout.</p>';
+        const b = await state.archive.read(r.path),
+          zip = await Archive.open(new File([b], "office.zip"));
+        let paths = zip.entries
+          .map((e) => e.path)
+          .filter((p) =>
+            /word\/document.xml|ppt\/slides\/slide\d+\.xml$/.test(p),
+          )
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        if (ext(r.path) === "xlsx") {
+          container.innerHTML =
+            '<p class="notice">Download this workbook to inspect formulas, worksheets, and formatting in a spreadsheet application.</p>';
+          return;
+        }
+        for (let i = 0; i < paths.length; i++) {
+          const d = xml(await zip.text(paths[i]));
+          if (ext(r.path) === "pptx") {
+            const h = document.createElement("h3");
+            h.textContent = "Slide " + (i + 1);
+            container.append(h);
+          }
+          for (const p of all(d, "p")) {
+            const s = all(p, "t")
+              .map((t) => t.textContent)
+              .join("");
+            if (s) {
+              const el = document.createElement("p");
+              el.textContent = s;
+              container.append(el);
+            }
+          }
+        }
+      }
+      async function copyValue(s) {
+        try {
+          if (!navigator.clipboard?.writeText) throw Error();
+          await navigator.clipboard.writeText(s);
+          toast("Copied to clipboard");
+        } catch {
+          $("copyFallback").value = s;
+          $("copyDialog").showModal();
+          $("copyFallback").focus();
+          $("copyFallback").select();
+        }
+      }
+      async function copyCurrent(mode) {
+        try {
+          const r = current;
+          if (mode === "source") {
+            if (!textFile(r.path))
+              throw Error(
+                "Binary files have no text source. Download the original file.",
+              );
+            return await copyValue(await state.archive.text(r.path));
+          }
+          if (mode === "html") {
+            const body = await getBody(r);
+            if (!body)
+              throw Error(
+                "This item has no HTML body. Use Copy text or Copy source.",
+              );
+            return await copyValue(body);
+          }
+          const body = await getBody(r);
+          let s = body ? plain(body) : "";
+          if (r.category === "Quizzes & question banks")
+            s += "\n" + plain(await quizHTML(r));
+          if (r.module)
+            s = all(r.module, "title")
+              .map((t) => t.textContent)
+              .join("\n");
+          if (!s.trim()) s = $("content").innerText;
+          if (!s.trim()) throw Error("No text available for this item.");
+          await copyValue(s.trim());
+        } catch (e) {
+          fail(e);
+        }
+      }
+      function save(blob, name) {
+        const url = URL.createObjectURL(blob),
+          a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        a.style.display = "none";
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      }
+      async function downloadFile(path) {
+        try {
+          toast("Preparing " + path.split("/").pop() + "…");
+          save(
+            new Blob([await state.archive.read(path)], { type: mime(path) }),
+            path.split("/").pop(),
+          );
+          toast("Download prepared");
+        } catch (e) {
+          fail(e);
+        }
+      }
+      async function downloadZIP(paths, name) {
+        if (!paths.length) return;
+        const buttonIDs = ["downloadSelected", "downloadView", "downloadAll"];
+        for (const id of buttonIDs) $(id).disabled = true;
+        try {
+          toast("Preparing ZIP with original folder paths…");
+          const zip = await state.archive.zip(paths);
+          save(zip, name);
+          toast("ZIP download prepared");
+        } catch (e) {
+          fail(e);
+        } finally {
+          updateSelection();
+          $("downloadAll").disabled = false;
+        }
+      }
+      function showReport() {
+        ++renderID;
+        current = null;
+        renderList();
+        $("split").classList.add("show-detail");
+        const d = $("detail");
+        d.innerHTML =
+          '<button class="mobile-back" id="back">← Back to results</button><p class="eyebrow">Export report</p><h2>' +
+          esc(state.title) +
+          "</h2><p>" +
+          state.archive.entries.length +
+          " files · " +
+          state.records.length +
+          ' indexed items</p><p class="path">' +
+          esc(state.file.name) +
+          "</p><p>All files remains the complete archive inventory. Previews do not execute scripts or load remote images, embedded sites, or external stylesheets. External services and content absent from the export require the original Canvas course.</p><h3>Indexing notices</h3><pre>" +
+          esc(
+            state.warnings.length
+              ? state.warnings.join("\n")
+              : "No indexing issues found.",
+          ) +
+          "</pre>";
+        $("back").onclick = () => {
+          $("split").classList.remove("show-detail");
+          $("list").querySelector('[aria-pressed="true"]')?.focus();
+        };
+      }
+      $("open").onclick = $("choose").onclick = () => $("file").click();
+      $("file").onchange = (e) => openFile(e.target.files[0]);
+      let dragDepth = 0;
+      document.addEventListener("dragenter", (e) => {
+        if (e.dataTransfer.types.includes("Files")) {
+          e.preventDefault();
+          dragDepth++;
+          $("drop").classList.add("drag");
+        }
+      });
+      document.addEventListener("dragover", (e) => {
+        if (e.dataTransfer.types.includes("Files")) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+        }
+      });
+      document.addEventListener("dragleave", () => {
+        if (--dragDepth <= 0) {
+          dragDepth = 0;
+          $("drop").classList.remove("drag");
+        }
+      });
+      document.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dragDepth = 0;
+        $("drop").classList.remove("drag");
+        if (e.dataTransfer.files.length > 1) {
+          toast("Open one course export at a time");
+          return;
+        }
+        openFile(e.dataTransfer.files[0]);
+      });
+      $("search").oninput = renderList;
+      $("sort").onchange = renderList;
+      $("selectAll").onchange = (e) => {
+        for (const r of visible)
+          e.target.checked ? selected.add(r.id) : selected.delete(r.id);
+        renderList();
+      };
+      $("downloadSelected").onclick = () =>
+        downloadZIP(
+          itemsFor(category)
+            .filter((r) => selected.has(r.id))
+            .flatMap((r) => r.files),
+          "selected-files.zip",
+        );
+      $("downloadView").onclick = () =>
+        downloadZIP(
+          visible.flatMap((r) => r.files),
+          "course-view.zip",
+        );
+      $("downloadAll").onclick = () => {
+        save(
+          state.file,
+          state.file.name.replace(/\.(imscc|zip)$/i, "") + ".zip",
+        );
+        toast("Complete archive ZIP download prepared");
+      };
+      $("closeCopy").onclick = () => $("copyDialog").close();
+      function setTheme(theme) {
+        document.documentElement.dataset.theme = theme;
+        $("theme").textContent =
+          theme === "dark" ? "Light theme" : "Dark theme";
+        try {
+          localStorage.setItem("canvas-explorer-theme", theme);
+        } catch {}
+      }
+      let theme = "light";
+      try {
+        theme =
+          localStorage.getItem("canvas-explorer-theme") ||
+          (matchMedia("(prefers-color-scheme:dark)").matches
+            ? "dark"
+            : "light");
+      } catch {}
+      setTheme(theme);
+      $("theme").onclick = () => {
+        setTheme(
+          document.documentElement.dataset.theme === "dark" ? "light" : "dark",
+        );
+      };
+    </script>
+  </body>
+</html>
