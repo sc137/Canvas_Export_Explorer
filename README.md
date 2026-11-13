@@ -1,5 +1,7 @@
 # Canvas Export Explorer
 
+## [View this Project](https://sc137.github.io/Canvas_Export_Explorer/)
+
 Open **index.html** in a current Chrome, Edge, Firefox, or Safari browser. No installation, server, account, or internet connection is needed. The HTML file can be copied to another computer and used on its own.
 
 Drag a Canvas `.imscc` export onto the window, or choose **Open export**. A ZIP containing an unmodified Canvas export also works.
